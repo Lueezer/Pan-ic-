@@ -720,7 +720,8 @@ Transform:
   m_LocalPosition: {x: -0.2478, y: 3.0542, z: 0}
   m_LocalScale: {x: 0.28797543, y: 0.28797543, z: 0.28797543}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1892054147}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &414338570
@@ -738,7 +739,7 @@ MonoBehaviour:
   speed: 5
   interactionDistance: 1.5
   holdPoint: {fileID: 1892054147}
-  fridgeUI: {fileID: 2039897893}
+  fridgeUI: {fileID: 305375749495749128, guid: dae807f25495ce847b16a474cde07ffa, type: 3}
   heldItem: {fileID: 0}
 --- !u!61 &414338571
 BoxCollider2D:
@@ -2902,12 +2903,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1892054146}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.26, y: 2.59, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.7633449, y: -1.6119432, z: 0}
+  m_LocalScale: {x: 3.4725187, y: 3.4725187, z: 3.4725187}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 414338569}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1918073041
 GameObject:
@@ -3635,4 +3636,3 @@ SceneRoots:
   - {fileID: 1050286050}
   - {fileID: 2039897895}
   - {fileID: 1347999165}
-  - {fileID: 1892054147}
