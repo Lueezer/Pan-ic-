@@ -4,11 +4,9 @@ public class PlayerController : MonoBehaviour
 {
     public float speed = 5f;
     public float interactionDistance = 1.5f;
-    public Transform holdPoint; // Ponto onde o item fica preso nas mãos do jogador
-
-    [Header("UI & Referências")]
-    public GameObject fridgeUI;
-    public GameObject heldItem;
+    public Transform holdPoint;
+    public GameObject currentHeldItem;
+    public string heldItemType = ""; // "", "Polvilho", "Queijo", "FormaVazia", "FormaComMassa", "PaoQueijo", "Prato", "PratoComPao"
 
     private Vector2 movement;
     private Rigidbody2D rb;
@@ -16,7 +14,6 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
-        if (fridgeUI != null) fridgeUI.SetActive(false);
     }
 
     void Update()
@@ -37,38 +34,60 @@ public class PlayerController : MonoBehaviour
 
     void TryInteract()
     {
-        // Raio para identificar superfícies, geladeira, fogão, etc.
-        Collider2D hit = Physics2D.OverlapCircle(transform.position, interactionDistance);
-        if (hit != null)
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, interactionDistance);
+        foreach (var hit in hits)
         {
             if (hit.CompareTag("Fridge"))
             {
-                OpenFridge();
+                GameManager.Instance.OpenFridge();
+                return;
+            }
+            if (hit.CompareTag("Stove"))
+            {
+                StoveTile stove = hit.GetComponent<StoveTile>();
+                if (stove != null) stove.Interact(this);
+                return;
+            }
+            if (hit.CompareTag("Customer"))
+            {
+                CustomerAI customer = hit.GetComponent<CustomerAI>();
+                if (customer != null && heldItemType == "PratoComPao")
+                {
+                    customer.ReceiveOrder();
+                    ClearHeldItem();
+                }
+                return;
             }
         }
     }
 
-    public void OpenFridge()
+    public void PickItem(GameObject prefab, string itemType)
     {
-        if (fridgeUI != null)
-        {
-            fridgeUI.transform.position = new Vector3(-4.4087f, 2.4422f, 0f);
-            fridgeUI.transform.localScale = new Vector3(1.6027f, 2.095851f, 1f);
-            fridgeUI.SetActive(true);
-        }
+        if (currentHeldItem != null) Destroy(currentHeldItem);
+
+        heldItemType = itemType;
+        currentHeldItem = Instantiate(prefab, holdPoint.position, Quaternion.identity, holdPoint);
+
+        SpriteRenderer sr = currentHeldItem.GetComponent<SpriteRenderer>();
+        if (sr != null) sr.sortingOrder = 2; // Coloca na Layer 2 na frente do player
     }
 
-    public void PickUpItem(GameObject itemPrefab)
+    public void ClearHeldItem()
     {
-        if (heldItem != null) return; // Já está segurando algo
+        if (currentHeldItem != null) Destroy(currentHeldItem);
+        heldItemType = "";
+    }
 
-        heldItem = Instantiate(itemPrefab, holdPoint.position, Quaternion.identity, holdPoint);
+    // Botões da UI da Geladeira chamam essas funções:
+    public void GetPolvilhoFromFridge()
+    {
+        PickItem(GameManager.Instance.polvilhoPrefab, "Polvilho");
+        GameManager.Instance.CloseFridge();
+    }
 
-        // Garante que o prato/item fique na frente do personagem (Layer de renderização)
-        SpriteRenderer sr = heldItem.GetComponent<SpriteRenderer>();
-        if (sr != null)
-        {
-            sr.sortingOrder = 2; // Layer 2 pedida nas especificações
-        }
+    public void GetQueijoFromFridge()
+    {
+        PickItem(GameManager.Instance.queijoPrefab, "Queijo");
+        GameManager.Instance.CloseFridge();
     }
 }

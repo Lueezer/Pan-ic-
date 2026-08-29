@@ -5,11 +5,12 @@ TagManager:
   serializedVersion: 3
   tags:
   - Ground
-  - stove
   - Countertop
   - Fridge
   - Chairs
   - Plate
+  - Customer
+  - Stove
   layers:
   - Default
   - TransparentFX

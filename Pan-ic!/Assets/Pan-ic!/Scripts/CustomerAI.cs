@@ -1,71 +1,66 @@
 using System.Collections;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class CustomerAI : MonoBehaviour
 {
-    [Header("Posições")]
     public Vector3 spawnPos = new Vector3(9.42f, -0.03f, 0f);
     public Vector3 counterPos = new Vector3(2.82f, 0.02f, 0f);
-    public Transform[] chairs; // Array com as 6 cadeiras da cena
-
-    [Header("UI de Balão de Fala")]
-    public GameObject speechBubble;
-    public Image paitingImage;
-
     public float moveSpeed = 2.5f;
-    private Transform targetChair;
+
+    public Sprite paoDeQueijoSprite;
+
+    private bool isWaitingForFood = false;
 
     void Start()
     {
         transform.position = spawnPos;
-        StartCoroutine(CustomerFlow());
+        StartCoroutine(CustomerLogic());
     }
 
-    private IEnumerator CustomerFlow()
+    private IEnumerator CustomerLogic()
     {
-        // 1. Anda até o balcão
+        // 1. Anda até o Balcão
         yield return MoveTo(counterPos);
 
-        // 2. Escolhe uma cadeira aleatória (1 a 6)
-        if (chairs != null && chairs.Length > 0)
+        // 2. Anda até uma Cadeira Aleatória
+        if (GameManager.Instance.chairs != null && GameManager.Instance.chairs.Length > 0)
         {
-            int randomIndex = Random.Range(0, chairs.Length);
-            targetChair = chairs[randomIndex];
-            yield return MoveTo(targetChair.position);
+            int index = Random.Range(0, GameManager.Instance.chairs.Length);
+            Transform targetChair = GameManager.Instance.chairs[index];
+            if (targetChair != null)
+            {
+                yield return MoveTo(targetChair.position);
+            }
         }
 
-        // 3. Mostra o balão de fala com o pão de queijo
-        ShowSpeechBubble();
+        // 3. Mostra Balão de Fala
+        GameManager.Instance.ShowCustomerSpeech(paoDeQueijoSprite);
+        isWaitingForFood = true;
+    }
 
-        // 4. Aguarda ser servido (Simulação de espera)
-        yield return new WaitForSeconds(8f);
+    public void ReceiveOrder()
+    {
+        if (isWaitingForFood)
+        {
+            isWaitingForFood = false;
+            StartCoroutine(LeaveRoutine());
+        }
+    }
 
-        // 5. Esconde o balão e vai embora
-        if (speechBubble != null) speechBubble.SetActive(false);
+    private IEnumerator LeaveRoutine()
+    {
+        GameManager.Instance.HideCustomerSpeech();
         yield return MoveTo(spawnPos);
-
-        // Notifica o Spawner e é destruído
-        CustomerSpawner.instance.OnCustomerLeft();
+        GameManager.Instance.OnCustomerLeft();
         Destroy(gameObject);
     }
 
-    private IEnumerator MoveTo(Vector3 destination)
+    private IEnumerator MoveTo(Vector3 dest)
     {
-        while (Vector3.Distance(transform.position, destination) > 0.1f)
+        while (Vector3.Distance(transform.position, dest) > 0.1f)
         {
-            transform.position = Vector3.MoveTowards(transform.position, destination, moveSpeed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, dest, moveSpeed * Time.deltaTime);
             yield return null;
-        }
-    }
-
-    private void ShowSpeechBubble()
-    {
-        if (speechBubble != null)
-        {
-            speechBubble.transform.position = new Vector3(4.2478f, 1.5113f, 0f);
-            speechBubble.transform.localScale = new Vector3(1.767137f, 1.438383f, 1f);
-            speechBubble.SetActive(true);
         }
     }
 }
