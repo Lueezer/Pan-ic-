@@ -1,93 +1,52 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
+[RequireComponent(typeof(Rigidbody2D))]
+[RequireComponent(typeof(Collider2D))]
 public class PlayerController : MonoBehaviour
 {
-    public float speed = 5f;
-    public float interactionDistance = 1.5f;
+    [Header("Configurações de Movimento")]
+    [SerializeField] private float moveSpeed = 5f;
+
+    [Header("Pontos de Interação")]
     public Transform holdPoint;
-    public GameObject currentHeldItem;
-    public string heldItemType = ""; // "", "Polvilho", "Queijo", "FormaVazia", "FormaComMassa", "PaoQueijo", "Prato", "PratoComPao"
 
-    private Vector2 movement;
-    private Rigidbody2D rb;
+    private Rigidbody2D rigidbody2D;
+    private Collider2D collider2D;
+    private SpriteRenderer spriteRenderer;
+    private Vector2 moveInput;
 
-    void Start()
+    private void Awake()
     {
-        rb = GetComponent<Rigidbody2D>();
+        rigidbody2D = GetComponent<Rigidbody2D>();
+        collider2D = GetComponent<Collider2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-    void Update()
+    public void OnMove(InputValue value)
     {
-        movement.x = Input.GetAxisRaw("Horizontal");
-        movement.y = Input.GetAxisRaw("Vertical");
-
-        if (Input.GetKeyDown(KeyCode.E) || Input.GetMouseButtonDown(0))
-        {
-            TryInteract();
-        }
+        moveInput = value.Get<Vector2>();
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
-        rb.MovePosition(rb.position + movement.normalized * speed * Time.fixedDeltaTime);
-    }
+        // 1. Calcula a posição para onde o player quer ir
+        Vector2 targetPosition = rigidbody2D.position + moveInput * moveSpeed * Time.fixedDeltaTime;
 
-    void TryInteract()
-    {
-        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, interactionDistance);
-        foreach (var hit in hits)
-        {
-            if (hit.CompareTag("Fridge"))
-            {
-                GameManager.Instance.OpenFridge();
-                return;
-            }
-            if (hit.CompareTag("Stove"))
-            {
-                StoveTile stove = hit.GetComponent<StoveTile>();
-                if (stove != null) stove.Interact(this);
-                return;
-            }
-            if (hit.CompareTag("Customer"))
-            {
-                CustomerAI customer = hit.GetComponent<CustomerAI>();
-                if (customer != null && heldItemType == "PratoComPao")
-                {
-                    customer.ReceiveOrder();
-                    ClearHeldItem();
-                }
-                return;
-            }
-        }
-    }
+        // 2. Limites da Câmera
+        Camera mainCam = Camera.main;
+        Vector3 minBounds = mainCam.ViewportToWorldPoint(new Vector3(0, 0, 0));
+        Vector3 maxBounds = mainCam.ViewportToWorldPoint(new Vector3(1, 1, 0));
 
-    public void PickItem(GameObject prefab, string itemType)
-    {
-        if (currentHeldItem != null) Destroy(currentHeldItem);
+        // 3. Metade do tamanho do Sprite
+        float spriteHalfWidth = spriteRenderer.bounds.extents.x;
+        float spriteHalfHeight = spriteRenderer.bounds.extents.y;
 
-        heldItemType = itemType;
-        currentHeldItem = Instantiate(prefab, holdPoint.position, Quaternion.identity, holdPoint);
+        // 4. Aplica o Clamp na posição final antes de mover a física
+        targetPosition.x = Mathf.Clamp(targetPosition.x, minBounds.x + spriteHalfWidth, maxBounds.x - spriteHalfWidth);
+        targetPosition.y = Mathf.Clamp(targetPosition.y, minBounds.y + spriteHalfHeight, maxBounds.y - spriteHalfHeight);
 
-        SpriteRenderer sr = currentHeldItem.GetComponent<SpriteRenderer>();
-        if (sr != null) sr.sortingOrder = 2; // Coloca na Layer 2 na frente do player
-    }
-
-    public void ClearHeldItem()
-    {
-        if (currentHeldItem != null) Destroy(currentHeldItem);
-        heldItemType = "";
-    }
-
-    // Botões da UI da Geladeira chamam essas funções:
-    public void GetPolvilhoFromFridge()
-    {
-        PickItem(GameManager.Instance.polvilhoPrefab, "Polvilho");
-        GameManager.Instance.CloseFridge();
-    }
-
-    public void GetQueijoFromFridge()
-    {
-        PickItem(GameManager.Instance.queijoPrefab, "Queijo");
-        GameManager.Instance.CloseFridge();
+        // 5. Move a física já com a posição travada
+        rigidbody2D.MovePosition(targetPosition);
     }
 }
