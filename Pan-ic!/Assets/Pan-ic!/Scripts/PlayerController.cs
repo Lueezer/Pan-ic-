@@ -39,26 +39,45 @@ public class PlayerController : MonoBehaviour
 
         print("1. Botão Interagir Pressionado!");
 
-        if (currentItem == null)
+        // Busca todos os colisores no raio do HoldPoint
+        Collider2D[] hits = Physics2D.OverlapCircleAll(holdPoint.position, interactRadius, interactableLayer);
+
+        FridgeUI fridgeFound = null;
+        Item itemFound = null;
+
+        foreach (Collider2D hit in hits)
         {
-            // Busca todos os colisores no raio do HoldPoint
-            Collider2D[] hits = Physics2D.OverlapCircleAll(holdPoint.position, interactRadius, interactableLayer);
+            // Ignora o próprio jogador
+            if (hit.gameObject == gameObject) continue;
 
-            Item itemFound = null;
-
-            foreach (Collider2D hit in hits)
+            // 1. Procura por uma Geladeira no alcance
+            FridgeUI fridge = hit.GetComponent<FridgeUI>();
+            if (fridge != null)
             {
-                // Ignora o próprio jogador
-                if (hit.gameObject == gameObject) continue;
-
-                Item item = hit.GetComponent<Item>();
-                if (item != null)
-                {
-                    itemFound = item;
-                    break; // Encontrou o item correto, pode parar a busca
-                }
+                fridgeFound = fridge;
+                break;
             }
 
+            // 2. Procura por um Item solto no alcance
+            Item item = hit.GetComponent<Item>();
+            if (item != null)
+            {
+                itemFound = item;
+                break;
+            }
+        }
+
+        // Se encontrou a geladeira, ela SEMPRE abre/fecha a janela (mesmo com a mão cheia)
+        if (fridgeFound != null)
+        {
+            print("2. Geladeira encontrada! Alternando janela da interface...");
+            fridgeFound.ToggleFridge();
+            return;
+        }
+
+        // Se não interagiu com a geladeira, segue a lógica normal de pegar ou soltar
+        if (currentItem == null)
+        {
             if (itemFound != null)
             {
                 print($"3. Item '{itemFound.itemName}' encontrado! Pegando item...");
@@ -67,7 +86,7 @@ public class PlayerController : MonoBehaviour
             }
             else
             {
-                print("ALERTA: Nenhum objeto com o script 'Item.cs' foi encontrado no alcance!");
+                print("ALERTA: Nenhum objeto interativo no alcance!");
             }
         }
         else
@@ -102,5 +121,28 @@ public class PlayerController : MonoBehaviour
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(holdPoint.position, interactRadius);
         }
+    }
+
+    // ==========================================
+    // Métodos auxiliares para a UI da Geladeira
+    // ==========================================
+
+    /// <summary>
+    /// Retorna 'true' se o jogador já estiver segurando algo na mão.
+    /// </summary>
+    public bool HasItemInHand()
+    {
+        return currentItem != null;
+    }
+
+    /// <summary>
+    /// Coloca um item (gerado pelos botões da geladeira) diretamente na mão do jogador.
+    /// </summary>
+    public void GiveItemToHand(Item newItem)
+    {
+        if (newItem == null) return;
+
+        currentItem = newItem;
+        currentItem.OnPickUp(holdPoint);
     }
 }
