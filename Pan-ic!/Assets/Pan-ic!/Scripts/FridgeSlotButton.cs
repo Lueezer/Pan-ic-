@@ -12,6 +12,8 @@ public class FridgeSlotButton : MonoBehaviour
 
     public void OnClickSelectIngredient()
     {
+        Debug.Log("--- BOTÃO DA GELADEIRA FOI CLICADO COM SUCESSO! ---");
+
         if (player == null || ingredientPrefab == null)
         {
             Debug.LogWarning("[FridgeSlotButton] Falta atribuir o Player ou o Prefab do Ingrediente no Inspector!");

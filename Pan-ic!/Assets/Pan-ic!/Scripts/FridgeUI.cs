@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -35,15 +36,12 @@ public class FridgeUI : MonoBehaviour
             if (distance > closeDistance)
             {
                 CloseFridge();
+                return;
             }
         }
 
-        // Garante a leitura do Cancelar (Esc ou B) caso o callback do InputSystem não dispare
-        if (Keyboard.current != null && (Keyboard.current.escapeKey.wasPressedThisFrame || Keyboard.current.bKey.wasPressedThisFrame))
-        {
-            CloseFridge();
-        }
-        if (Gamepad.current != null && Gamepad.current.buttonEast.wasPressedThisFrame)
+        // Leitura direta de segurança para ESC
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
         {
             CloseFridge();
         }
@@ -67,13 +65,20 @@ public class FridgeUI : MonoBehaviour
                 playerInput.SwitchCurrentActionMap("UI");
             }
 
-            // Força o foco visual no primeiro botão
-            if (firstSelectedButton != null && EventSystem.current != null)
-            {
-                EventSystem.current.SetSelectedGameObject(null);
-                EventSystem.current.SetSelectedGameObject(firstSelectedButton.gameObject);
-                firstSelectedButton.Select();
-            }
+            StartCoroutine(SetFocusRoutine());
+        }
+    }
+
+    private IEnumerator SetFocusRoutine()
+    {
+        // Aguarda o frame para o Canvas processar o SetActive
+        yield return new WaitForEndOfFrame();
+
+        if (EventSystem.current != null && firstSelectedButton != null)
+        {
+            EventSystem.current.SetSelectedGameObject(null);
+            EventSystem.current.SetSelectedGameObject(firstSelectedButton.gameObject);
+            firstSelectedButton.Select();
         }
     }
 
