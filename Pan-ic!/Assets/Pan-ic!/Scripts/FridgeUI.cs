@@ -29,7 +29,7 @@ public class FridgeUI : MonoBehaviour
     {
         if (!isOpen) return;
 
-        // Fechamento automático por distância
+        // 1. Fechamento automático por distância
         if (playerTransform != null)
         {
             float distance = Vector2.Distance(transform.position, playerTransform.position);
@@ -40,10 +40,41 @@ public class FridgeUI : MonoBehaviour
             }
         }
 
-        // Leitura direta de segurança para ESC
-        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        // 2. Disparo manual do botão focado via tecla E / Enter / Space
+        if (Keyboard.current != null)
         {
-            CloseFridge();
+            if (Keyboard.current.eKey.wasPressedThisFrame ||
+                Keyboard.current.enterKey.wasPressedThisFrame ||
+                Keyboard.current.spaceKey.wasPressedThisFrame)
+            {
+                TriggerSelectedButton();
+            }
+
+            // Tecla ESC para fechar
+            if (Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                CloseFridge();
+            }
+        }
+    }
+
+    private void TriggerSelectedButton()
+    {
+        GameObject selectedObj = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+
+        if (selectedObj == null && firstSelectedButton != null)
+        {
+            selectedObj = firstSelectedButton.gameObject;
+        }
+
+        if (selectedObj != null)
+        {
+            Button currentBtn = selectedObj.GetComponent<Button>();
+            if (currentBtn != null)
+            {
+                currentBtn.onClick.Invoke();
+                Debug.Log($"[FridgeUI] Clique executado no botão: {selectedObj.name}");
+            }
         }
     }
 
@@ -71,8 +102,7 @@ public class FridgeUI : MonoBehaviour
 
     private IEnumerator SetFocusRoutine()
     {
-        // Aguarda o frame para o Canvas processar o SetActive
-        yield return new WaitForEndOfFrame();
+        yield return null; // Aguarda 1 frame para o Canvas processar o SetActive
 
         if (EventSystem.current != null && firstSelectedButton != null)
         {

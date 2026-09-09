@@ -2735,8 +2735,12 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3487766752508392110, guid: 45e41c967d2c6c245b399fe9ff53bd71, type: 3}
+      propertyPath: m_UIInputModule
+      value: 
+      objectReference: {fileID: 1230265247}
+    - target: {fileID: 3487766752508392110, guid: 45e41c967d2c6c245b399fe9ff53bd71, type: 3}
       propertyPath: m_DefaultActionMap
-      value: df70fa95-8a34-4494-b137-73ab6b9c7d37
+      value: Player
       objectReference: {fileID: 0}
     - target: {fileID: 6728008935776967708, guid: 45e41c967d2c6c245b399fe9ff53bd71, type: 3}
       propertyPath: m_Name
