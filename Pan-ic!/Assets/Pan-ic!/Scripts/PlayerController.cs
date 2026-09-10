@@ -43,6 +43,7 @@ public class PlayerController : MonoBehaviour
         Collider2D[] hits = Physics2D.OverlapCircleAll(holdPoint.position, interactRadius, interactableLayer);
 
         FridgeUI fridgeFound = null;
+        Customer customerFound = null; // <- VARIÁVEL ADICIONADA
         Item itemFound = null;
 
         foreach (Collider2D hit in hits)
@@ -58,7 +59,15 @@ public class PlayerController : MonoBehaviour
                 break;
             }
 
-            // 2. Procura por um Item solto no alcance
+            // 2. Procura por um Cliente aguardando no alcance
+            Customer customer = hit.GetComponent<Customer>();
+            if (customer != null)
+            {
+                customerFound = customer;
+                break;
+            }
+
+            // 3. Procura por um Item solto no alcance
             Item item = hit.GetComponent<Item>();
             if (item != null)
             {
@@ -75,12 +84,22 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // Se não interagiu com a geladeira, segue a lógica normal de pegar ou soltar
+        // ==========================================
+        // ENCAIXE DO TRECHO DO CLIENTE AQUI:
+        // ==========================================
+        if (customerFound != null && customerFound.GetCurrentState() == CustomerState.WaitingToOrder)
+        {
+            print("3. Cliente encontrado! Atendendo no balcão...");
+            customerFound.InteractWithCustomer();
+            return;
+        }
+
+        // Se não interagiu com a geladeira nem com um cliente, segue a lógica normal de pegar ou soltar itens
         if (currentItem == null)
         {
             if (itemFound != null)
             {
-                print($"3. Item '{itemFound.itemName}' encontrado! Pegando item...");
+                print($"4. Item '{itemFound.itemName}' encontrado! Pegando item...");
                 currentItem = itemFound;
                 currentItem.OnPickUp(holdPoint);
             }
@@ -91,7 +110,7 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            print("4. Soltando item...");
+            print("5. Soltando item...");
             currentItem.OnDrop(holdPoint.position);
             currentItem = null;
         }
@@ -127,17 +146,11 @@ public class PlayerController : MonoBehaviour
     // Métodos auxiliares para a UI da Geladeira
     // ==========================================
 
-    /// <summary>
-    /// Retorna 'true' se o jogador já estiver segurando algo na mão.
-    /// </summary>
     public bool HasItemInHand()
     {
         return currentItem != null;
     }
 
-    /// <summary>
-    /// Coloca um item (gerado pelos botões da geladeira) diretamente na mão do jogador.
-    /// </summary>
     public void GiveItemToHand(Item newItem)
     {
         if (newItem == null) return;

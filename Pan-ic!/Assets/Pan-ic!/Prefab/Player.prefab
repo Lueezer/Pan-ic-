@@ -124,7 +124,7 @@ MonoBehaviour:
   m_ActionEvents: []
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
-  m_DefaultActionMap: 
+  m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
 --- !u!61 &3857484955807404377
@@ -214,7 +214,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 5
   holdPoint: {fileID: 5858905771283229253}
-  interactRadius: 1
+  interactRadius: 2.2
   interactableLayer:
     serializedVersion: 2
     m_Bits: 256
