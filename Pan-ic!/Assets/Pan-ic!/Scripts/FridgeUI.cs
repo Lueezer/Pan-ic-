@@ -18,6 +18,7 @@ public class FridgeUI : MonoBehaviour
     [SerializeField] private PlayerInput playerInput;
 
     private bool isOpen = false;
+    private bool justOpened = false; // Trava para ignorar o clique do frame de abertura
 
     private void Start()
     {
@@ -29,7 +30,10 @@ public class FridgeUI : MonoBehaviour
     {
         if (!isOpen) return;
 
-        // 1. Fechamento automático por distância
+        // Se acabou de abrir, ignora a leitura do teclado neste frame
+        if (justOpened) return;
+
+        // Fechamento automático por distância
         if (playerTransform != null)
         {
             float distance = Vector2.Distance(transform.position, playerTransform.position);
@@ -40,9 +44,15 @@ public class FridgeUI : MonoBehaviour
             }
         }
 
-        // 2. Disparo manual do botão focado via tecla E / Enter / Space
         if (Keyboard.current != null)
         {
+            // Garante foco visual caso se perca
+            if (EventSystem.current != null && EventSystem.current.currentSelectedGameObject == null && firstSelectedButton != null)
+            {
+                EventSystem.current.SetSelectedGameObject(firstSelectedButton.gameObject);
+            }
+
+            // Confirmação via E, Enter ou Space (somente após o frame de abertura)
             if (Keyboard.current.eKey.wasPressedThisFrame ||
                 Keyboard.current.enterKey.wasPressedThisFrame ||
                 Keyboard.current.spaceKey.wasPressedThisFrame)
@@ -50,7 +60,7 @@ public class FridgeUI : MonoBehaviour
                 TriggerSelectedButton();
             }
 
-            // Tecla ESC para fechar
+            // Fechar com ESC
             if (Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 CloseFridge();
@@ -87,6 +97,8 @@ public class FridgeUI : MonoBehaviour
     public void OpenFridge()
     {
         isOpen = true;
+        justOpened = true; // Ativa a trava
+
         if (fridgeUIPanel != null)
         {
             fridgeUIPanel.SetActive(true);
@@ -102,7 +114,7 @@ public class FridgeUI : MonoBehaviour
 
     private IEnumerator SetFocusRoutine()
     {
-        yield return null; // Aguarda 1 frame para o Canvas processar o SetActive
+        yield return null; // Aguarda 1 frame para processar a ativação da UI
 
         if (EventSystem.current != null && firstSelectedButton != null)
         {
@@ -110,11 +122,16 @@ public class FridgeUI : MonoBehaviour
             EventSystem.current.SetSelectedGameObject(firstSelectedButton.gameObject);
             firstSelectedButton.Select();
         }
+
+        yield return null; // Aguarda mais 1 frame para liberar os inputs
+        justOpened = false; // Libera a leitura para novos cliques
     }
 
     public void CloseFridge()
     {
         isOpen = false;
+        justOpened = false;
+
         if (fridgeUIPanel != null)
             fridgeUIPanel.SetActive(false);
 
