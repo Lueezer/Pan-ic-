@@ -72,37 +72,25 @@ public class PlayerController : MonoBehaviour
             return;
         }
 
-        // 2. Interação Cliente
-        if (customerFound != null)
+        // 2. Interação Cliente (Anotar Pedido)
+        if (customerFound != null && customerFound.GetCurrentState() == CustomerState.WaitingToOrder)
         {
-            if (customerFound.GetCurrentState() == CustomerState.WaitingToOrder)
-            {
-                customerFound.TakeOrder();
-                return;
-            }
-            else if (customerFound.GetCurrentState() == CustomerState.WaitingForFoodAtTable && currentItem != null)
-            {
-                Item plateToDeliver = currentItem;
-                currentItem = null;
-                plateToDeliver.transform.SetParent(null);
-                customerFound.ServeFood(plateToDeliver.gameObject);
-                return;
-            }
+            customerFound.TakeOrder();
+            return;
         }
 
-        // 3. Pegar / Soltar Item
+        // 3. Pegar / Soltar Item na Mesa
         if (currentItem == null)
         {
             if (itemFound != null)
             {
                 currentItem = itemFound;
-                // SEMPRE pega na mão direita (holdPoint)
                 currentItem.OnPickUp(holdPoint);
             }
         }
         else
         {
-            // Procura o ItemPoint mais próximo (seja do lado esquerdo ou direito)
+            // Procura o ItemPoint mais próximo da mesa para colocar o prato
             Transform targetItemPoint = FindClosestFreeItemPoint();
 
             if (targetItemPoint != null)
@@ -131,7 +119,6 @@ public class PlayerController : MonoBehaviour
             {
                 if (hit.transform.childCount == 0) // Ponto livre sem filhos
                 {
-                    // Checa a distância tanto da mão direita quanto da esquerda
                     float distRight = Vector2.Distance(holdPoint.position, hit.transform.position);
                     float distLeft = Vector2.Distance(leftPos, hit.transform.position);
                     float shortestDist = Mathf.Min(distRight, distLeft);

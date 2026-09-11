@@ -15,6 +15,7 @@ TagManager:
   - ItemPoint
   - Item
   - leftInteractPoint
+  - Bread Cheese
   layers:
   - Default
   - TransparentFX

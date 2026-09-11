@@ -8,7 +8,7 @@ public class Item : MonoBehaviour
     private Rigidbody2D rigidbody2D;
     private Collider2D collider2D;
     private SpriteRenderer mainSpriteRenderer;
-    private Vector3 worldScale;
+    private Vector3 initialScale;
 
     private void Awake()
     {
@@ -16,7 +16,8 @@ public class Item : MonoBehaviour
         collider2D = GetComponent<Collider2D>();
         mainSpriteRenderer = GetComponent<SpriteRenderer>();
 
-        worldScale = transform.lossyScale;
+        // Salva a escala local original criada no Prefab/Inspector
+        initialScale = transform.localScale;
     }
 
     public void OnPickUp(Transform holdPoint)
@@ -25,14 +26,12 @@ public class Item : MonoBehaviour
         // Coloca o prato levemente pra frente da câmera em relação ao Player
         transform.localPosition = new Vector3(0f, 0f, -0.1f);
 
-        if (holdPoint.lossyScale.x != 0 && holdPoint.lossyScale.y != 0)
-        {
-            transform.localScale = new Vector3(
-                worldScale.x / holdPoint.lossyScale.x,
-                worldScale.y / holdPoint.lossyScale.y,
-                worldScale.z / holdPoint.lossyScale.z
-            );
-        }
+        // Ajuste seguro de escala evitando divisão por zero
+        Vector3 parentLossy = holdPoint.lossyScale;
+        float safeX = (parentLossy.x != 0) ? initialScale.x / parentLossy.x : initialScale.x;
+        float safeY = (parentLossy.y != 0) ? initialScale.y / parentLossy.y : initialScale.y;
+
+        transform.localScale = new Vector3(safeX, safeY, initialScale.z);
 
         if (rigidbody2D != null) rigidbody2D.bodyType = RigidbodyType2D.Kinematic;
         if (collider2D != null) collider2D.enabled = false;
@@ -45,10 +44,12 @@ public class Item : MonoBehaviour
         transform.SetParent(itemPoint);
         // Coloca o prato levemente pra frente em relação à mesa
         transform.localPosition = new Vector3(0f, 0f, -0.1f);
-        transform.localScale = worldScale;
+
+        // Restaura a escala local original limpa
+        transform.localScale = initialScale;
 
         if (rigidbody2D != null) rigidbody2D.bodyType = RigidbodyType2D.Kinematic;
-        if (collider2D != null) collider2D.enabled = true;
+        if (collider2D != null) collider2D.enabled = true; // Garante que o collider volta ativo!
 
         UpdateLayersAndPositions(itemPoint);
     }

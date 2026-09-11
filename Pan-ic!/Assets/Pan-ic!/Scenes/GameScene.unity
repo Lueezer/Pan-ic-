@@ -197,9 +197,10 @@ GameObject:
   m_Component:
   - component: {fileID: 24263629}
   - component: {fileID: 24263630}
+  - component: {fileID: 24263631}
   m_Layer: 0
   m_Name: BreadCheese
-  m_TagString: Untagged
+  m_TagString: Bread Cheese
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -279,6 +280,42 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_SpriteSortPoint: 0
   m_BlendShapeWeights: []
+--- !u!58 &24263631
+CircleCollider2D:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 24263628}
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Density: 1
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_IsTrigger: 0
+  m_UsedByEffector: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
+  m_Offset: {x: 0, y: 0}
+  m_Radius: 1.095
 --- !u!1 &118470907
 GameObject:
   m_ObjectHideFlags: 0
@@ -944,7 +981,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3487766752508392110, guid: 45e41c967d2c6c245b399fe9ff53bd71, type: 3}
   m_PrefabInstance: {fileID: 7311646393905494909}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1509127167}
+  m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 62899f850307741f2a39c98a8b639597, type: 3}
@@ -3894,11 +3931,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8355777914234663568, guid: 008d11328c75deb4aa53def3bd505ea0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.49
+      value: -4.46
       objectReference: {fileID: 0}
     - target: {fileID: 8355777914234663568, guid: 008d11328c75deb4aa53def3bd505ea0, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.8
+      value: -0.52
       objectReference: {fileID: 0}
     - target: {fileID: 8355777914234663568, guid: 008d11328c75deb4aa53def3bd505ea0, type: 3}
       propertyPath: m_LocalPosition.z
@@ -3956,7 +3993,6 @@ GameObject:
   - component: {fileID: 1304191036}
   - component: {fileID: 1304191035}
   - component: {fileID: 1304191037}
-  - component: {fileID: 1304191038}
   m_Layer: 0
   m_Name: Trash
   m_TagString: Untagged
@@ -4085,22 +4121,6 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 3.58, y: 1.6626341}
   m_EdgeRadius: 0
---- !u!114 &1304191038
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1304191034}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5d2e99e51830e90439997da89926b8d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::YAxisSorter
-  spriteRenderer: {fileID: 0}
-  precision: 100
-  baseOrder: 5000
-  runOnlyAtStart: 1
 --- !u!1 &1313129258
 GameObject:
   m_ObjectHideFlags: 0
@@ -4956,27 +4976,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1509127167 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 6728008935776967708, guid: 45e41c967d2c6c245b399fe9ff53bd71, type: 3}
-  m_PrefabInstance: {fileID: 7311646393905494909}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &1509127171
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1509127167}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5d2e99e51830e90439997da89926b8d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::YAxisSorter
-  spriteRenderer: {fileID: 0}
-  precision: 100
-  baseOrder: 5000
-  runOnlyAtStart: 0
 --- !u!1 &1511446949
 GameObject:
   m_ObjectHideFlags: 0
@@ -5501,7 +5500,6 @@ GameObject:
   - component: {fileID: 1723171096}
   - component: {fileID: 1723171095}
   - component: {fileID: 1723171094}
-  - component: {fileID: 1723171097}
   m_Layer: 8
   m_Name: Table
   m_TagString: Untagged
@@ -5630,22 +5628,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1723171097
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1723171093}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5d2e99e51830e90439997da89926b8d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::YAxisSorter
-  spriteRenderer: {fileID: 0}
-  precision: 100
-  baseOrder: 5000
-  runOnlyAtStart: 1
 --- !u!1 &1742149015
 GameObject:
   m_ObjectHideFlags: 0
@@ -5756,8 +5738,6 @@ GameObject:
   - component: {fileID: 1751261333}
   - component: {fileID: 1751261332}
   - component: {fileID: 1751261331}
-  - component: {fileID: 1751261334}
-  - component: {fileID: 1751261335}
   m_Layer: 0
   m_Name: Counter
   m_TagString: Untagged
@@ -5886,34 +5866,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1751261334
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1751261330}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8573601e7ad882d468638fbde1e78f2a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::BaseSpriteSorter
---- !u!114 &1751261335
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1751261330}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5d2e99e51830e90439997da89926b8d0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::YAxisSorter
-  spriteRenderer: {fileID: 0}
-  precision: 100
-  baseOrder: 5000
-  runOnlyAtStart: 1
 --- !u!1 &1830495542
 GameObject:
   m_ObjectHideFlags: 0
@@ -7104,7 +7056,6 @@ GameObject:
   - component: {fileID: 2075786422}
   - component: {fileID: 2075786421}
   - component: {fileID: 2075786424}
-  - component: {fileID: 2075786425}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -7230,18 +7181,6 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!114 &2075786425
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2075786420}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2ff0adc1fa65aa3469ddd2f428a37a56, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CameraSetup
 --- !u!1001 &1412229621268148103
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7413,10 +7352,7 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 2486750120730442353, guid: 45e41c967d2c6c245b399fe9ff53bd71, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1096918683}
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 6728008935776967708, guid: 45e41c967d2c6c245b399fe9ff53bd71, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1509127171}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 45e41c967d2c6c245b399fe9ff53bd71, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:

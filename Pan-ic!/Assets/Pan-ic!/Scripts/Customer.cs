@@ -18,6 +18,11 @@ public class Customer : MonoBehaviour
     [SerializeField] private float moveSpeed = 3f;
     [SerializeField] private float eatingTime = 5f;
 
+    [Header("Detecção de Comida na Mesa")]
+    [SerializeField] private float foodDetectionRadius = 0.6f; // Raio curto para pegar só o prato da frente dele
+    [SerializeField] private LayerMask foodLayerMask;           // Pode deixar 'Default' ou criar layer de Itens
+    [SerializeField] private float checkInterval = 0.5f;       // Checa a mesa a cada 0.5s
+
     [Header("UI & Feedback (Filhos na Hierarquia)")]
     [SerializeField] private GameObject exclamationMark;
     [SerializeField] private GameObject speechBubble;
@@ -29,9 +34,9 @@ public class Customer : MonoBehaviour
 
     private Transform currentQueuePoint;
     private Vector3 exitPointPosition;
-    private GameObject servedFood;
     private SpriteRenderer spriteRenderer;
     private Coroutine hideBubbleCoroutine;
+    private float foodCheckTimer = 0f;
 
     private void Awake()
     {
@@ -42,14 +47,13 @@ public class Customer : MonoBehaviour
     {
         currentState = CustomerState.Entering;
 
-        // Garante que ambos começam desativados no Start
         if (exclamationMark != null) exclamationMark.SetActive(false);
         if (speechBubble != null) speechBubble.SetActive(false);
     }
 
     private void Update()
     {
-        // Garante que o cliente fique visível em ordem positiva
+        // Garante ordenação de profundidade visível na frente do chão/mesas
         if (spriteRenderer != null)
         {
             spriteRenderer.sortingOrder = Mathf.Max(1, Mathf.RoundToInt(-transform.position.y * 10) + 100);
@@ -62,7 +66,7 @@ public class Customer : MonoBehaviour
                 {
                     MoveTowards(currentQueuePoint.position);
 
-                    // REGRA 1: Chegou no CounterPoint -> Liga a Exclamação
+                    // Chegou no Balcão
                     if (Vector2.Distance(transform.position, currentQueuePoint.position) < 0.1f)
                     {
                         currentState = CustomerState.WaitingToOrder;
@@ -84,11 +88,21 @@ public class Customer : MonoBehaviour
                 }
                 break;
 
+            case CustomerState.WaitingForFoodAtTable:
+                // Checa periodicamente se colocaram a comida na mesa
+                foodCheckTimer += Time.deltaTime;
+                if (foodCheckTimer >= checkInterval)
+                {
+                    foodCheckTimer = 0f;
+                    CheckTableForFood();
+                }
+                break;
+
             case CustomerState.Leaving:
                 MoveTowards(exitPointPosition);
                 if (Vector2.Distance(transform.position, exitPointPosition) < 0.2f)
                 {
-                    if (assignedChairIndex != -1)
+                    if (assignedChairIndex != -1 && TableManager.Instance != null)
                     {
                         TableManager.Instance.ReleaseChair(assignedChairIndex);
                     }
@@ -98,10 +112,9 @@ public class Customer : MonoBehaviour
         }
     }
 
-    // REGRA 2: Interação com a tecla 'E'
+    // Interação no balcão com 'E'
     public void InteractWithCustomer()
     {
-        // Se está esperando no balcão: Some a exclamação e Liga o Balão
         if (currentState == CustomerState.WaitingToOrder)
         {
             currentState = CustomerState.ShowingOrderBubble;
@@ -109,10 +122,8 @@ public class Customer : MonoBehaviour
             if (exclamationMark != null) exclamationMark.SetActive(false);
             ShowSpeechBubble();
 
-            // Inicia o timer de 5 segundos para sumir o balão sozinho e ir para a mesa
             hideBubbleCoroutine = StartCoroutine(WaitAndGoToTable(5f));
         }
-        // Se interagir de novo ENQUANTO o balão está aberto: Some o balão imediatamente e vai para a mesa
         else if (currentState == CustomerState.ShowingOrderBubble)
         {
             if (hideBubbleCoroutine != null) StopCoroutine(hideBubbleCoroutine);
@@ -139,11 +150,92 @@ public class Customer : MonoBehaviour
             assignedChairIndex = index;
             currentState = CustomerState.WalkingToTable;
 
+            // MUDANÇA AQUI: Desativa a layer de interação do cliente no momento que ele sai do balcão.
+            // O jogador não vai mais conseguir "colidir a interação" com ele enquanto ele anda ou fica sentado.
+            gameObject.layer = LayerMask.NameToLayer("Default");
+
             if (CustomerSpawner.Instance != null)
             {
                 CustomerSpawner.Instance.NotifyCounterFreed();
             }
         }
+    }
+
+    // --- LÓGICA DO RAIO NA MESA ---
+    private void CheckTableForFood()
+    {
+        // Se a cadeira tem um ponto de prato (PlatePoint / ItemPoint na mesa)
+        Vector3 checkCenter = targetChairSlot.platePoint != null ? targetChairSlot.platePoint.position : transform.position;
+
+        // Raio pequeno para detectar o item em cima do ponto de refeição
+        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(checkCenter, foodDetectionRadius);
+
+        foreach (Collider2D hit in hitColliders)
+        {
+            GameObject foundObject = hit.gameObject;
+
+            // Busca pelo Pão de Queijo no próprio objeto ou nos filhos dele
+            GameObject breadCheeseObj = FindBreadCheese(foundObject);
+
+            if (breadCheeseObj != null)
+            {
+                print("Cliente encontrou o Pão de Queijo! Começando a comer...");
+                currentState = CustomerState.Eating;
+                StartCoroutine(EatRoutine(breadCheeseObj));
+                break;
+            }
+        }
+    }
+
+    // Procura por Tag "Bread Cheese" ou nome do objeto contendo "bread" / "cheese"
+    private GameObject FindBreadCheese(GameObject rootObj)
+    {
+        if (rootObj == null) return null;
+
+        try
+        {
+            if (rootObj.CompareTag("Bread Cheese")) return rootObj;
+        }
+        catch { }
+
+        string rootName = rootObj.name.ToLower();
+        if (rootName.Contains("bread") || rootName.Contains("cheese") || rootName.Contains("pao"))
+        {
+            return rootObj;
+        }
+
+        foreach (Transform child in rootObj.transform)
+        {
+            try
+            {
+                if (child.CompareTag("Bread Cheese")) return child.gameObject;
+            }
+            catch { }
+
+            string childName = child.name.ToLower();
+            if (childName.Contains("bread") || childName.Contains("cheese") || childName.Contains("pao"))
+            {
+                return child.gameObject;
+            }
+        }
+
+        return null;
+    }
+
+    private IEnumerator EatRoutine(GameObject breadCheeseObject)
+    {
+        // Aguarda os 5 segundos comendo
+        yield return new WaitForSeconds(eatingTime);
+
+        // Destrói apenas o Pão de Queijo (deixa o prato limpo na mesa)
+        if (breadCheeseObject != null)
+        {
+            Destroy(breadCheeseObject);
+            print("Cliente terminou de comer e destruiu o Pão de Queijo.");
+        }
+
+        // Vai embora
+        currentState = CustomerState.Leaving;
     }
 
     private void ShowExclamation()
@@ -164,69 +256,18 @@ public class Customer : MonoBehaviour
         }
     }
 
-    // Força o SpriteRenderer dos ícones a ficar visível e na frente do cliente
     private void ForceChildVisibility(GameObject childObj)
     {
         SpriteRenderer childSr = childObj.GetComponent<SpriteRenderer>();
         if (childSr != null && spriteRenderer != null)
         {
             childSr.enabled = true;
-            childSr.sortingOrder = spriteRenderer.sortingOrder + 10; // Fica acima da cabeça do cliente
+            childSr.sortingOrder = spriteRenderer.sortingOrder + 10;
         }
     }
 
     public void TakeOrder() => InteractWithCustomer();
     public CustomerState GetCurrentState() => currentState;
-
-    // Entrega de Comida
-    public void ServeFood(GameObject food)
-    {
-        if (currentState != CustomerState.WaitingForFoodAtTable) return;
-
-        bool hasBreadCheese = food.name.ToLower().Contains("bread") || food.name.ToLower().Contains("cheese");
-        if (!hasBreadCheese)
-        {
-            foreach (Transform child in food.transform)
-            {
-                if (child.name.ToLower().Contains("bread") || child.name.ToLower().Contains("cheese"))
-                {
-                    hasBreadCheese = true;
-                    break;
-                }
-            }
-        }
-
-        if (!hasBreadCheese) return;
-
-        servedFood = food;
-
-        if (targetChairSlot.platePoint != null)
-        {
-            servedFood.transform.SetParent(targetChairSlot.platePoint);
-            servedFood.transform.localPosition = new Vector3(0f, 0f, -0.01f);
-        }
-
-        currentState = CustomerState.Eating;
-        StartCoroutine(EatRoutine());
-    }
-
-    private IEnumerator EatRoutine()
-    {
-        yield return new WaitForSeconds(eatingTime);
-
-        if (servedFood != null)
-        {
-            foreach (Transform child in servedFood.transform)
-            {
-                if (child.name.ToLower().Contains("bread") || child.name.ToLower().Contains("cheese"))
-                {
-                    Destroy(child.gameObject);
-                }
-            }
-        }
-
-        currentState = CustomerState.Leaving;
-    }
 
     public void SetupCustomer(Transform queuePoint, Transform exitTransform)
     {
@@ -245,5 +286,14 @@ public class Customer : MonoBehaviour
     private void MoveTowards(Vector3 destination)
     {
         transform.position = Vector3.MoveTowards(transform.position, destination, moveSpeed * Time.deltaTime);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (targetChairSlot.platePoint != null)
+        {
+            Gizmos.color = Color.green;
+            Gizmos.DrawWireSphere(targetChairSlot.platePoint.position, foodDetectionRadius);
+        }
     }
 }
