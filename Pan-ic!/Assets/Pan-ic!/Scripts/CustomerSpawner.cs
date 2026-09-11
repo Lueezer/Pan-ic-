@@ -12,9 +12,9 @@ public class CustomerSpawner : MonoBehaviour
     [SerializeField] private Transform counterPoint;
 
     [Header("Configurações do Protótipo")]
-    [SerializeField] private bool isInfiniteMode = true; // Se ativado, continua gerando sem limite
-    [SerializeField] private int maxCustomersTotal = 10;  // Usado caso não seja modo infinito
-    [SerializeField] private float initialDelay = 5f;     // Tempo para o primeiro cliente chegar
+    [SerializeField] private bool isInfiniteMode = true;
+    [SerializeField] private int maxCustomersTotal = 10;
+    [SerializeField] private float initialDelay = 5f;          // 5s para o 1º cliente da fase
     [SerializeField] private float delayBetweenCustomers = 10f; // 10s após liberar o balcão
 
     private int spawnedCount = 0;
@@ -28,37 +28,37 @@ public class CustomerSpawner : MonoBehaviour
 
     private IEnumerator SpawnLoopRoutine()
     {
-        // Espera inicial do começo da fase
+        // 1. Espera 5 segundos APENAS no começo do jogo
         yield return new WaitForSeconds(initialDelay);
 
         while (isInfiniteMode || spawnedCount < maxCustomersTotal)
         {
-            // 1. Checa se o balcão tá livre
             bool isCounterFree = (currentActiveCustomer == null);
 
-            // 2. Checa se existe cadeira livre no restaurante
             bool hasFreeChair = true;
             if (TableManager.Instance != null)
             {
                 hasFreeChair = TableManager.Instance.HasFreeChair();
             }
 
-            // Só gera se O BALCÃO TIVER LIVRE + TIVER CADEIRA DISPONÍVEL
+            // Se o balcão está livre e tem cadeira, gera o cliente!
             if (isCounterFree && hasFreeChair)
             {
-                // Espera o tempo de 10 segundos antes do novo cliente aparecer
-                yield return new WaitForSeconds(delayBetweenCustomers);
+                SpawnRandomCustomer();
+                spawnedCount++;
 
-                // Dupla checagem antes de instanciar (para garantir que nada mudou durante os 10s)
-                if (currentActiveCustomer == null && (TableManager.Instance == null || TableManager.Instance.HasFreeChair()))
+                // Espera o cliente sair do balcão (enquanto o balcão estiver ocupado por ele)
+                while (currentActiveCustomer != null)
                 {
-                    SpawnRandomCustomer();
-                    spawnedCount++;
+                    yield return new WaitForSeconds(0.5f);
                 }
+
+                // Assim que ele saiu do balcão, aguarda os 10 segundos antes de spawnar o próximo!
+                yield return new WaitForSeconds(delayBetweenCustomers);
             }
             else
             {
-                // Se a casa tiver cheia ou o balcão ocupado, checa novamente a cada 1 segundo
+                // Se não tiver cadeira livre, aguarda 1s para checar de novo
                 yield return new WaitForSeconds(1f);
             }
         }
@@ -79,7 +79,6 @@ public class CustomerSpawner : MonoBehaviour
         }
     }
 
-    // Chamado pelo Customer.cs assim que ele sai do balcão e caminha até a mesa ou vai embora
     public void ClearCurrentCustomer()
     {
         currentActiveCustomer = null;

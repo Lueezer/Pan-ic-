@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: b06f7c1ae16a81045890f7bed9c1444f
+guid: a6a73e3f4959ec54889001d30cf24a67
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4344633969830372465
-    second: Mesa Cozinha_0
+      213: 7205018337011936076
+    second: Lixo_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,23 +126,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Mesa Cozinha_0
+      name: Lixo_0
       rect:
         serializedVersion: 2
-        x: 14
-        y: 27
-        width: 444
-        height: 659
+        x: 764
+        y: 292
+        width: 358
+        height: 525
       alignment: 9
-      pivot: {x: 0.50533146, y: 0.024055613}
+      pivot: {x: 0.4999995, y: 0.08026809}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 174a5d2a39d3b4c30800000000000000
-      internalID: 4344633969830372465
+      spriteID: c4ba5c1f00e5df360800000000000000
+      internalID: 7205018337011936076
       vertices: []
       indices: 
       edges: []
@@ -151,7 +151,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 3c46d515707bf7344abffea296f05d1b
+    spriteID: 97d74291ef1bd8a46802ae11253483f7
     internalID: 0
     vertices: []
     indices: 
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Mesa Cozinha_0: 4344633969830372465
+      Lixo_0: 7205018337011936076
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

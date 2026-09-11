@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 315fb5a1691ab0b48928bb494887cb22
+guid: cf5f948347c307047b9462c92b1688ef
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4084825574748958083
-    second: Table-Chairs_0
+      213: -3649683027453034561
+    second: Parede - 2_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Table-Chairs_0
+      name: Parede - 2_0
       rect:
         serializedVersion: 2
-        x: 17
-        y: 22
-        width: 775
-        height: 408
+        x: 887
+        y: 257
+        width: 129
+        height: 568
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 38da758c73730b830800000000000000
-      internalID: 4084825574748958083
+      spriteID: fbfb3e59f98b95dc0800000000000000
+      internalID: -3649683027453034561
       vertices: []
       indices: 
       edges: []
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Table-Chairs_0: 4084825574748958083
+      Parede - 2_0: -3649683027453034561
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

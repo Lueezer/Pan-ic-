@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: b06f7c1ae16a81045890f7bed9c1444f
+guid: f2c2b20c78d10824387795e1d1e99e9c
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 4344633969830372465
-    second: Mesa Cozinha_0
+      213: -6844716224868215179
+    second: Bancada - Esquerda Cima_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -126,23 +126,23 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Mesa Cozinha_0
+      name: Bancada - Esquerda Cima_0
       rect:
         serializedVersion: 2
-        x: 14
-        y: 27
-        width: 444
-        height: 659
-      alignment: 9
-      pivot: {x: 0.50533146, y: 0.024055613}
+        x: 401
+        y: 249
+        width: 1086
+        height: 603
+      alignment: 0
+      pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 174a5d2a39d3b4c30800000000000000
-      internalID: 4344633969830372465
+      spriteID: 576906cbbdea201a0800000000000000
+      internalID: -6844716224868215179
       vertices: []
       indices: 
       edges: []
@@ -151,7 +151,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 3c46d515707bf7344abffea296f05d1b
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Mesa Cozinha_0: 4344633969830372465
+      Bancada - Esquerda Cima_0: -6844716224868215179
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

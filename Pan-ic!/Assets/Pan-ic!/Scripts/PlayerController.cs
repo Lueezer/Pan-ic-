@@ -43,7 +43,7 @@ public class PlayerController : MonoBehaviour
         Collider2D[] hits = Physics2D.OverlapCircleAll(holdPoint.position, interactRadius, interactableLayer);
 
         FridgeUI fridgeFound = null;
-        Customer customerFound = null; // <- VARIÁVEL ADICIONADA
+        Customer customerFound = null;
         Item itemFound = null;
 
         foreach (Collider2D hit in hits)
@@ -76,7 +76,7 @@ public class PlayerController : MonoBehaviour
             }
         }
 
-        // Se encontrou a geladeira, ela SEMPRE abre/fecha a janela (mesmo com a mão cheia)
+        // Se encontrou a geladeira, ela SEMPRE abre/fecha a janela
         if (fridgeFound != null)
         {
             print("2. Geladeira encontrada! Alternando janela da interface...");
@@ -85,13 +85,32 @@ public class PlayerController : MonoBehaviour
         }
 
         // ==========================================
-        // ENCAIXE DO TRECHO DO CLIENTE AQUI:
+        // INTERAÇÃO COM O CLIENTE (CORRIGIDA)
         // ==========================================
-        if (customerFound != null && customerFound.GetCurrentState() == CustomerState.WaitingToOrder)
+        if (customerFound != null)
         {
-            print("3. Cliente encontrado! Atendendo no balcão...");
-            customerFound.InteractWithCustomer();
-            return;
+            // CASO A: Cliente no balcão pedindo -> Anota o pedido
+            if (customerFound.GetCurrentState() == CustomerState.WaitingToOrder)
+            {
+                print("Atendendo pedido do cliente no balcão!");
+                customerFound.TakeOrder();
+                return;
+            }
+            // CASO B: Cliente na mesa esperando comida + Player com item na mão
+            else if (customerFound.GetCurrentState() == CustomerState.WaitingForFoodAtTable && currentItem != null)
+            {
+                print("Entregando prato ao cliente na mesa!");
+
+                Item plateToDeliver = currentItem;
+
+                // 1. IMPORTANTE: Limpa as variáveis da mão e solta o objeto no Unity!
+                currentItem = null;
+                plateToDeliver.transform.SetParent(null);
+
+                // 2. Entrega o prato para o cliente gerenciar
+                customerFound.ServeFood(plateToDeliver.gameObject);
+                return;
+            }
         }
 
         // Se não interagiu com a geladeira nem com um cliente, segue a lógica normal de pegar ou soltar itens
@@ -142,19 +161,11 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    // ==========================================
-    // Métodos auxiliares para a UI da Geladeira
-    // ==========================================
-
-    public bool HasItemInHand()
-    {
-        return currentItem != null;
-    }
+    public bool HasItemInHand() => currentItem != null;
 
     public void GiveItemToHand(Item newItem)
     {
         if (newItem == null) return;
-
         currentItem = newItem;
         currentItem.OnPickUp(holdPoint);
     }
