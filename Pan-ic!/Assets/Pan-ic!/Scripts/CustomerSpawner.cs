@@ -1,86 +1,85 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CustomerSpawner : MonoBehaviour
 {
-    [Header("Prefabs de Clientes")]
-    [SerializeField] private GameObject maleCustomerPrefab;
-    [SerializeField] private GameObject femaleCustomerPrefab;
+    public static CustomerSpawner Instance { get; private set; }
 
-    [Header("Pontos do Cenário")]
-    [SerializeField] private Transform doorPoint;
-    [SerializeField] private Transform counterPoint;
+    [Header("Prefabs dos Clientes (Homem e Mulher)")]
+    [SerializeField] private List<GameObject> customerPrefabs = new List<GameObject>(); // Coloque os 2 prefabs aqui
 
-    [Header("Configurações do Protótipo")]
-    [SerializeField] private bool isInfiniteMode = true;
-    [SerializeField] private int maxCustomersTotal = 10;
-    [SerializeField] private float initialDelay = 5f;          // 5s para o 1º cliente da fase
-    [SerializeField] private float delayBetweenCustomers = 10f; // 10s após liberar o balcão
+    [Header("Pontos de Referência")]
+    [SerializeField] private Transform doorPoint;      // Ponto onde nasce (Porta)
+    [SerializeField] private Transform counterPoint;   // Ponto em frente ao balcão
 
-    private int spawnedCount = 0;
-    private Customer currentActiveCustomer = null;
+    [Header("Configurações do Spawner")]
+    [SerializeField] private float initialDelay = 10f; // Espera 10s no Play
+    [SerializeField] private float spawnCooldown = 10f; // 10s após sair do balcão
+
+    private bool isCounterOccupied = false;
+
+    private void Awake()
+    {
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
 
     private void Start()
     {
-        if (doorPoint == null) doorPoint = transform;
-        StartCoroutine(SpawnLoopRoutine());
+        StartCoroutine(SpawnRoutine());
     }
 
-    private IEnumerator SpawnLoopRoutine()
+    private IEnumerator SpawnRoutine()
     {
-        // 1. Espera 5 segundos APENAS no começo do jogo
+        // Espera inicial de 10 segundos após dar Play
         yield return new WaitForSeconds(initialDelay);
 
-        while (isInfiniteMode || spawnedCount < maxCustomersTotal)
+        while (true)
         {
-            bool isCounterFree = (currentActiveCustomer == null);
-
-            bool hasFreeChair = true;
-            if (TableManager.Instance != null)
+            // Valida se o balcão está livre e se há pelo menos uma cadeira vaga no salão
+            if (!isCounterOccupied && TableManager.Instance != null && TableManager.Instance.HasAvailableChair())
             {
-                hasFreeChair = TableManager.Instance.HasFreeChair();
+                SpawnCustomer();
+                isCounterOccupied = true;
             }
 
-            // Se o balcão está livre e tem cadeira, gera o cliente!
-            if (isCounterFree && hasFreeChair)
-            {
-                SpawnRandomCustomer();
-                spawnedCount++;
-
-                // Espera o cliente sair do balcão (enquanto o balcão estiver ocupado por ele)
-                while (currentActiveCustomer != null)
-                {
-                    yield return new WaitForSeconds(0.5f);
-                }
-
-                // Assim que ele saiu do balcão, aguarda os 10 segundos antes de spawnar o próximo!
-                yield return new WaitForSeconds(delayBetweenCustomers);
-            }
-            else
-            {
-                // Se não tiver cadeira livre, aguarda 1s para checar de novo
-                yield return new WaitForSeconds(1f);
-            }
+            yield return new WaitForSeconds(1f);
         }
     }
 
-    public void SpawnRandomCustomer()
+    private void SpawnCustomer()
     {
-        if (maleCustomerPrefab == null || femaleCustomerPrefab == null || counterPoint == null) return;
+        if (customerPrefabs.Count == 0 || doorPoint == null || counterPoint == null)
+        {
+            Debug.LogWarning("CustomerSpawner: Faltam prefabs ou pontos configurados no Inspector!");
+            return;
+        }
 
-        GameObject selectedPrefab = (Random.value > 0.5f) ? maleCustomerPrefab : femaleCustomerPrefab;
+        // Aleatoriza entre os prefabs disponíveis (Homem / Mulher)
+        int randomIndex = Random.Range(0, customerPrefabs.Count);
+        GameObject selectedPrefab = customerPrefabs[randomIndex];
+
         GameObject newCustomerObj = Instantiate(selectedPrefab, doorPoint.position, Quaternion.identity);
+        Customer customer = newCustomerObj.GetComponent<Customer>();
 
-        currentActiveCustomer = newCustomerObj.GetComponent<Customer>();
-
-        if (currentActiveCustomer != null)
+        if (customer != null)
         {
-            currentActiveCustomer.SetupCustomer(doorPoint, counterPoint);
+            // Envia o ponto do balcão e da porta para o cliente andar até lá
+            customer.SetupCustomer(counterPoint, doorPoint);
         }
     }
 
-    public void ClearCurrentCustomer()
+    // Chamado pelo cliente assim que ele sai do balcão em direção à cadeira
+    public void NotifyCounterFreed()
     {
-        currentActiveCustomer = null;
+        StartCoroutine(FreeCounterCooldown());
+    }
+
+    private IEnumerator FreeCounterCooldown()
+    {
+        // Espera 10 segundos após o balcão ser liberado para permitir um novo spawn
+        yield return new WaitForSeconds(spawnCooldown);
+        isCounterOccupied = false;
     }
 }

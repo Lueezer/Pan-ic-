@@ -8,8 +8,9 @@ public class PlayerController : MonoBehaviour
     [Header("Configurações de Movimento")]
     [SerializeField] private float moveSpeed = 5f;
 
-    [Header("Pontos de Interação")]
-    public Transform holdPoint;
+    [Header("Pontos de Interação / Raio")]
+    public Transform holdPoint;          // Mão Direita (onde o item segura)
+    public Transform leftInteractPoint;  // Mão Esquerda (só para detectar a mesa/balcão do outro lado)
 
     [Header("Configurações de Interação")]
     [SerializeField] private float interactRadius = 1f;
@@ -37,10 +38,14 @@ public class PlayerController : MonoBehaviour
     {
         if (!value.isPressed) return;
 
-        print("1. Botão Interagir Pressionado!");
+        // Busca acertos no lado direito e no lado esquerdo
+        Collider2D[] hitsRight = Physics2D.OverlapCircleAll(holdPoint.position, interactRadius, interactableLayer);
 
-        // Busca todos os colisores no raio do HoldPoint
-        Collider2D[] hits = Physics2D.OverlapCircleAll(holdPoint.position, interactRadius, interactableLayer);
+        Vector3 leftPos = (leftInteractPoint != null) ? leftInteractPoint.position : holdPoint.position;
+        Collider2D[] hitsLeft = Physics2D.OverlapCircleAll(leftPos, interactRadius, interactableLayer);
+
+        // Junta os dois arrays de acertos
+        Collider2D[] hits = CombineColliders(hitsRight, hitsLeft);
 
         FridgeUI fridgeFound = null;
         Customer customerFound = null;
@@ -48,91 +53,107 @@ public class PlayerController : MonoBehaviour
 
         foreach (Collider2D hit in hits)
         {
-            // Ignora o próprio jogador
             if (hit.gameObject == gameObject) continue;
 
-            // 1. Procura por uma Geladeira no alcance
             FridgeUI fridge = hit.GetComponent<FridgeUI>();
-            if (fridge != null)
-            {
-                fridgeFound = fridge;
-                break;
-            }
+            if (fridge != null) { fridgeFound = fridge; break; }
 
-            // 2. Procura por um Cliente aguardando no alcance
             Customer customer = hit.GetComponent<Customer>();
-            if (customer != null)
-            {
-                customerFound = customer;
-                break;
-            }
+            if (customer != null) { customerFound = customer; break; }
 
-            // 3. Procura por um Item solto no alcance
             Item item = hit.GetComponent<Item>();
-            if (item != null)
-            {
-                itemFound = item;
-                break;
-            }
+            if (item != null) { itemFound = item; break; }
         }
 
-        // Se encontrou a geladeira, ela SEMPRE abre/fecha a janela
+        // 1. Interação Geladeira
         if (fridgeFound != null)
         {
-            print("2. Geladeira encontrada! Alternando janela da interface...");
             fridgeFound.ToggleFridge();
             return;
         }
 
-        // ==========================================
-        // INTERAÇÃO COM O CLIENTE (CORRIGIDA)
-        // ==========================================
+        // 2. Interação Cliente
         if (customerFound != null)
         {
-            // CASO A: Cliente no balcão pedindo -> Anota o pedido
             if (customerFound.GetCurrentState() == CustomerState.WaitingToOrder)
             {
-                print("Atendendo pedido do cliente no balcão!");
                 customerFound.TakeOrder();
                 return;
             }
-            // CASO B: Cliente na mesa esperando comida + Player com item na mão
             else if (customerFound.GetCurrentState() == CustomerState.WaitingForFoodAtTable && currentItem != null)
             {
-                print("Entregando prato ao cliente na mesa!");
-
                 Item plateToDeliver = currentItem;
-
-                // 1. IMPORTANTE: Limpa as variáveis da mão e solta o objeto no Unity!
                 currentItem = null;
                 plateToDeliver.transform.SetParent(null);
-
-                // 2. Entrega o prato para o cliente gerenciar
                 customerFound.ServeFood(plateToDeliver.gameObject);
                 return;
             }
         }
 
-        // Se não interagiu com a geladeira nem com um cliente, segue a lógica normal de pegar ou soltar itens
+        // 3. Pegar / Soltar Item
         if (currentItem == null)
         {
             if (itemFound != null)
             {
-                print($"4. Item '{itemFound.itemName}' encontrado! Pegando item...");
                 currentItem = itemFound;
+                // SEMPRE pega na mão direita (holdPoint)
                 currentItem.OnPickUp(holdPoint);
-            }
-            else
-            {
-                print("ALERTA: Nenhum objeto interativo no alcance!");
             }
         }
         else
         {
-            print("5. Soltando item...");
-            currentItem.OnDrop(holdPoint.position);
-            currentItem = null;
+            // Procura o ItemPoint mais próximo (seja do lado esquerdo ou direito)
+            Transform targetItemPoint = FindClosestFreeItemPoint();
+
+            if (targetItemPoint != null)
+            {
+                currentItem.OnDrop(targetItemPoint);
+                currentItem = null;
+            }
         }
+    }
+
+    private Transform FindClosestFreeItemPoint()
+    {
+        Vector3 leftPos = (leftInteractPoint != null) ? leftInteractPoint.position : holdPoint.position;
+
+        Collider2D[] hitsRight = Physics2D.OverlapCircleAll(holdPoint.position, interactRadius, interactableLayer);
+        Collider2D[] hitsLeft = Physics2D.OverlapCircleAll(leftPos, interactRadius, interactableLayer);
+
+        Collider2D[] allHits = CombineColliders(hitsRight, hitsLeft);
+
+        Transform closestPoint = null;
+        float minDistance = float.MaxValue;
+
+        foreach (var hit in allHits)
+        {
+            if (hit.CompareTag("ItemPoint"))
+            {
+                if (hit.transform.childCount == 0) // Ponto livre sem filhos
+                {
+                    // Checa a distância tanto da mão direita quanto da esquerda
+                    float distRight = Vector2.Distance(holdPoint.position, hit.transform.position);
+                    float distLeft = Vector2.Distance(leftPos, hit.transform.position);
+                    float shortestDist = Mathf.Min(distRight, distLeft);
+
+                    if (shortestDist < minDistance)
+                    {
+                        minDistance = shortestDist;
+                        closestPoint = hit.transform;
+                    }
+                }
+            }
+        }
+
+        return closestPoint;
+    }
+
+    private Collider2D[] CombineColliders(Collider2D[] a, Collider2D[] b)
+    {
+        Collider2D[] result = new Collider2D[a.Length + b.Length];
+        a.CopyTo(result, 0);
+        b.CopyTo(result, a.Length);
+        return result;
     }
 
     private void FixedUpdate()
@@ -158,6 +179,11 @@ public class PlayerController : MonoBehaviour
         {
             Gizmos.color = Color.yellow;
             Gizmos.DrawWireSphere(holdPoint.position, interactRadius);
+        }
+        if (leftInteractPoint != null)
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(leftInteractPoint.position, interactRadius);
         }
     }
 

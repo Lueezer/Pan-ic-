@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 4487713581859241770}
   m_Layer: 8
   m_Name: queijo_0
-  m_TagString: Untagged
+  m_TagString: Item
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

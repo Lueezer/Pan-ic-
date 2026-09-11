@@ -1,82 +1,82 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class TableManager : MonoBehaviour
 {
-    public static TableManager Instance;
+    public static TableManager Instance { get; private set; }
 
     [System.Serializable]
-    public class ChairSlot
+    public struct ChairSlot
     {
         public int id;
-        public Vector3 position;       // Posição da Cadeira
-        public Transform platePoint;   // Ponto onde o prato fica na mesa (opcional)
-        public bool isOccupied = false;
+        public Transform chairTransform;
+        public Transform platePoint;
+        public bool isOccupied;
 
-        public ChairSlot(int id, Vector3 position)
-        {
-            this.id = id;
-            this.position = position;
-            this.isOccupied = false;
-        }
+        public Vector3 position => chairTransform != null ? chairTransform.position : Vector3.zero;
+        public bool IsValid => chairTransform != null;
     }
 
-    [Header("Lista de Lugares das Cadeiras")]
+    [Header("Configuração das Cadeiras")]
     public List<ChairSlot> availableChairs = new List<ChairSlot>();
 
     private void Awake()
     {
         if (Instance == null) Instance = this;
         else Destroy(gameObject);
-
-        // Inicializa as 4 cadeiras automaticamente com as coordenadas exatas
-        InitializeChairs();
     }
 
-    private void InitializeChairs()
+    public bool GetFreeChair(out ChairSlot freeSlot, out int index)
     {
-        availableChairs.Clear();
+        List<int> freeIndices = new List<int>();
 
-        // Coordenadas exatas passadas por você:
-        availableChairs.Add(new ChairSlot(1, new Vector3(4.11f, 2.97f, 0f)));
-        availableChairs.Add(new ChairSlot(2, new Vector3(7.57f, 2.97f, 0f)));
-        availableChairs.Add(new ChairSlot(3, new Vector3(4.20f, -3.45f, 0f)));
-        availableChairs.Add(new ChairSlot(4, new Vector3(7.63f, -3.45f, 0f)));
-    }
-
-    public bool HasFreeChair()
-    {
-        foreach (var slot in availableChairs)
+        for (int i = 0; i < availableChairs.Count; i++)
         {
-            if (!slot.isOccupied) return true;
+            if (!availableChairs[i].isOccupied && availableChairs[i].chairTransform != null)
+            {
+                freeIndices.Add(i);
+            }
         }
+
+        if (freeIndices.Count > 0)
+        {
+            // Seleciona um índice aleatório das cadeiras disponíveis
+            int randomIndex = freeIndices[Random.Range(0, freeIndices.Count)];
+            index = randomIndex;
+
+            ChairSlot updatedSlot = availableChairs[randomIndex];
+            updatedSlot.isOccupied = true;
+            availableChairs[randomIndex] = updatedSlot;
+
+            freeSlot = availableChairs[randomIndex];
+            return true;
+        }
+
+        freeSlot = default;
+        index = -1;
         return false;
     }
 
-    public ChairSlot GetRandomFreeChair()
+    public void ReleaseChair(int index)
     {
-        List<ChairSlot> freeChairs = new List<ChairSlot>();
-
-        foreach (var slot in availableChairs)
+        if (index >= 0 && index < availableChairs.Count)
         {
-            if (!slot.isOccupied) freeChairs.Add(slot);
+            ChairSlot updatedSlot = availableChairs[index];
+            updatedSlot.isOccupied = false;
+            availableChairs[index] = updatedSlot;
         }
-
-        if (freeChairs.Count > 0)
-        {
-            int randomIndex = Random.Range(0, freeChairs.Count);
-            freeChairs[randomIndex].isOccupied = true;
-            return freeChairs[randomIndex];
-        }
-
-        return null;
     }
 
-    public void ReleaseChair(ChairSlot slot)
+    public bool HasFreeChair() => HasAvailableChair();
+
+    public bool HasAvailableChair()
     {
-        if (slot != null)
+        foreach (var slot in availableChairs)
         {
-            slot.isOccupied = false;
+            if (!slot.isOccupied && slot.chairTransform != null)
+                return true;
         }
+        return false;
     }
 }

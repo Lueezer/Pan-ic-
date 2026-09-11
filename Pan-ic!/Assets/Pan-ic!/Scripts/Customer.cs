@@ -3,191 +3,247 @@ using UnityEngine;
 
 public enum CustomerState
 {
-    WalkingToCounter,
+    Entering,
     WaitingToOrder,
-    ShowingOrder,
-    WalkingToSeat,
-    WaitingForFoodAtTable, // Fica sentado esperando a comida chegar na mesa
+    ShowingOrderBubble,
+    WalkingToTable,
+    WaitingForFoodAtTable,
     Eating,
     Leaving
 }
 
 public class Customer : MonoBehaviour
 {
-    [Header("Velocidade e Movimento")]
-    [SerializeField] private float moveSpeed = 2.5f;
+    [Header("Configurações do Cliente")]
+    [SerializeField] private float moveSpeed = 3f;
+    [SerializeField] private float eatingTime = 5f;
 
-    [Header("UI do Balão / Indicadores")]
-    [SerializeField] private GameObject exclamationBubble;
-    [SerializeField] private GameObject orderBubble;
+    [Header("UI & Feedback (Filhos na Hierarquia)")]
+    [SerializeField] private GameObject exclamationMark;
+    [SerializeField] private GameObject speechBubble;
 
-    private Transform doorPoint;
-    private Transform counterPoint;
-    private TableManager.ChairSlot assignedChairSlot;
+    [Header("Status Atual")]
+    private CustomerState currentState;
+    private TableManager.ChairSlot targetChairSlot;
+    private int assignedChairIndex = -1;
 
-    private CustomerState currentState = CustomerState.WalkingToCounter;
+    private Transform currentQueuePoint;
+    private Vector3 exitPointPosition;
+    private GameObject servedFood;
     private SpriteRenderer spriteRenderer;
+    private Coroutine hideBubbleCoroutine;
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
-    public void SetupCustomer(Transform spawnDoor, Transform targetCounter)
+    private void Start()
     {
-        doorPoint = spawnDoor;
-        counterPoint = targetCounter;
-        transform.position = doorPoint.position;
+        currentState = CustomerState.Entering;
 
-        if (exclamationBubble != null) exclamationBubble.SetActive(false);
-        if (orderBubble != null) orderBubble.SetActive(false);
-
-        currentState = CustomerState.WalkingToCounter;
+        // Garante que ambos começam desativados no Start
+        if (exclamationMark != null) exclamationMark.SetActive(false);
+        if (speechBubble != null) speechBubble.SetActive(false);
     }
 
     private void Update()
     {
+        // Garante que o cliente fique visível em ordem positiva
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.sortingOrder = Mathf.Max(1, Mathf.RoundToInt(-transform.position.y * 10) + 100);
+        }
+
         switch (currentState)
         {
-            case CustomerState.WalkingToCounter:
-                if (counterPoint != null)
+            case CustomerState.Entering:
+                if (currentQueuePoint != null)
                 {
-                    MoveTowards(counterPoint.position, () =>
+                    MoveTowards(currentQueuePoint.position);
+
+                    // REGRA 1: Chegou no CounterPoint -> Liga a Exclamação
+                    if (Vector2.Distance(transform.position, currentQueuePoint.position) < 0.1f)
                     {
                         currentState = CustomerState.WaitingToOrder;
-                        if (exclamationBubble != null) exclamationBubble.SetActive(true);
-                    });
+                        ShowExclamation();
+                    }
                 }
                 break;
 
-            case CustomerState.WalkingToSeat:
-                if (assignedChairSlot != null)
+            case CustomerState.WalkingToTable:
+                if (targetChairSlot.IsValid)
                 {
-                    MoveTowards(assignedChairSlot.position, () =>
+                    MoveTowards(targetChairSlot.chairTransform.position);
+
+                    if (Vector2.Distance(transform.position, targetChairSlot.chairTransform.position) < 0.1f)
                     {
-                        // Chegou na cadeira: FICA ESPERANDO A COMIDA! Não vai embora sozinho.
                         currentState = CustomerState.WaitingForFoodAtTable;
-                    });
+                        print($"Cliente sentou na cadeira {assignedChairIndex} e aguarda a comida.");
+                    }
                 }
                 break;
 
             case CustomerState.Leaving:
-                if (doorPoint != null)
+                MoveTowards(exitPointPosition);
+                if (Vector2.Distance(transform.position, exitPointPosition) < 0.2f)
                 {
-                    MoveTowards(doorPoint.position, () =>
+                    if (assignedChairIndex != -1)
                     {
-                        if (assignedChairSlot != null && TableManager.Instance != null)
-                        {
-                            TableManager.Instance.ReleaseChair(assignedChairSlot);
-                        }
-                        Destroy(gameObject);
-                    });
+                        TableManager.Instance.ReleaseChair(assignedChairIndex);
+                    }
+                    Destroy(gameObject);
                 }
                 break;
         }
     }
 
-    // Chamado pelo Player quando ele anota o pedido no balcão
-    public void TakeOrder()
+    // REGRA 2: Interação com a tecla 'E'
+    public void InteractWithCustomer()
     {
+        // Se está esperando no balcão: Some a exclamação e Liga o Balão
         if (currentState == CustomerState.WaitingToOrder)
         {
-            StartCoroutine(OrderRoutine());
+            currentState = CustomerState.ShowingOrderBubble;
+
+            if (exclamationMark != null) exclamationMark.SetActive(false);
+            ShowSpeechBubble();
+
+            // Inicia o timer de 5 segundos para sumir o balão sozinho e ir para a mesa
+            hideBubbleCoroutine = StartCoroutine(WaitAndGoToTable(5f));
+        }
+        // Se interagir de novo ENQUANTO o balão está aberto: Some o balão imediatamente e vai para a mesa
+        else if (currentState == CustomerState.ShowingOrderBubble)
+        {
+            if (hideBubbleCoroutine != null) StopCoroutine(hideBubbleCoroutine);
+            GoToRandomChair();
         }
     }
 
-    private IEnumerator OrderRoutine()
+    private IEnumerator WaitAndGoToTable(float delay)
     {
-        currentState = CustomerState.ShowingOrder;
-
-        if (exclamationBubble != null) exclamationBubble.SetActive(false);
-        if (orderBubble != null) orderBubble.SetActive(true);
-
-        yield return new WaitForSeconds(3f);
-
-        if (orderBubble != null) orderBubble.SetActive(false);
-
-        // Reserva a cadeira e libera o balcão
-        if (TableManager.Instance != null)
+        yield return new WaitForSeconds(delay);
+        if (currentState == CustomerState.ShowingOrderBubble)
         {
-            assignedChairSlot = TableManager.Instance.GetRandomFreeChair();
-        }
-
-        CustomerSpawner spawner = FindAnyObjectByType<CustomerSpawner>();
-        if (spawner != null) spawner.ClearCurrentCustomer();
-
-        if (assignedChairSlot != null)
-        {
-            currentState = CustomerState.WalkingToSeat;
-        }
-        else
-        {
-            currentState = CustomerState.Leaving;
+            GoToRandomChair();
         }
     }
 
-    // Chamado quando o jogador coloca o prato com pão de queijo na mesa do cliente
-    public void ServeFood(GameObject plateObject)
+    private void GoToRandomChair()
     {
-        if (currentState == CustomerState.WaitingForFoodAtTable)
+        if (speechBubble != null) speechBubble.SetActive(false);
+
+        if (TableManager.Instance != null && TableManager.Instance.GetFreeChair(out TableManager.ChairSlot slot, out int index))
         {
-            StartCoroutine(EatRoutine(plateObject));
-        }
-    }
+            targetChairSlot = slot;
+            assignedChairIndex = index;
+            currentState = CustomerState.WalkingToTable;
 
-    private IEnumerator EatRoutine(GameObject plateObject)
-    {
-        currentState = CustomerState.Eating;
-
-        if (assignedChairSlot != null && plateObject != null)
-        {
-            Vector3 targetPos = (assignedChairSlot.platePoint != null)
-                ? assignedChairSlot.platePoint.position
-                : assignedChairSlot.position + new Vector3(-0.5f, 0f, 0f);
-
-            plateObject.transform.position = targetPos;
-            plateObject.transform.SetParent(null);
-        }
-
-        // Fica comendo por 5 segundos
-        yield return new WaitForSeconds(5f);
-
-        // Destrói apenas o pão de queijo
-        if (plateObject != null)
-        {
-            Transform bread = plateObject.transform.Find("bread") ?? plateObject.transform.Find("Cheese") ?? plateObject.transform.GetChild(0);
-            if (bread != null)
+            if (CustomerSpawner.Instance != null)
             {
-                Destroy(bread.gameObject);
+                CustomerSpawner.Instance.NotifyCounterFreed();
             }
+        }
+    }
 
-            // REATIVA O COLISOR DO PRATO EXPLICITAMENTE:
-            Collider2D plateCollider = plateObject.GetComponent<Collider2D>();
-            if (plateCollider != null)
+    private void ShowExclamation()
+    {
+        if (exclamationMark != null)
+        {
+            exclamationMark.SetActive(true);
+            ForceChildVisibility(exclamationMark);
+        }
+    }
+
+    private void ShowSpeechBubble()
+    {
+        if (speechBubble != null)
+        {
+            speechBubble.SetActive(true);
+            ForceChildVisibility(speechBubble);
+        }
+    }
+
+    // Força o SpriteRenderer dos ícones a ficar visível e na frente do cliente
+    private void ForceChildVisibility(GameObject childObj)
+    {
+        SpriteRenderer childSr = childObj.GetComponent<SpriteRenderer>();
+        if (childSr != null && spriteRenderer != null)
+        {
+            childSr.enabled = true;
+            childSr.sortingOrder = spriteRenderer.sortingOrder + 10; // Fica acima da cabeça do cliente
+        }
+    }
+
+    public void TakeOrder() => InteractWithCustomer();
+    public CustomerState GetCurrentState() => currentState;
+
+    // Entrega de Comida
+    public void ServeFood(GameObject food)
+    {
+        if (currentState != CustomerState.WaitingForFoodAtTable) return;
+
+        bool hasBreadCheese = food.name.ToLower().Contains("bread") || food.name.ToLower().Contains("cheese");
+        if (!hasBreadCheese)
+        {
+            foreach (Transform child in food.transform)
             {
-                plateCollider.enabled = true;
+                if (child.name.ToLower().Contains("bread") || child.name.ToLower().Contains("cheese"))
+                {
+                    hasBreadCheese = true;
+                    break;
+                }
+            }
+        }
+
+        if (!hasBreadCheese) return;
+
+        servedFood = food;
+
+        if (targetChairSlot.platePoint != null)
+        {
+            servedFood.transform.SetParent(targetChairSlot.platePoint);
+            servedFood.transform.localPosition = new Vector3(0f, 0f, -0.01f);
+        }
+
+        currentState = CustomerState.Eating;
+        StartCoroutine(EatRoutine());
+    }
+
+    private IEnumerator EatRoutine()
+    {
+        yield return new WaitForSeconds(eatingTime);
+
+        if (servedFood != null)
+        {
+            foreach (Transform child in servedFood.transform)
+            {
+                if (child.name.ToLower().Contains("bread") || child.name.ToLower().Contains("cheese"))
+                {
+                    Destroy(child.gameObject);
+                }
             }
         }
 
         currentState = CustomerState.Leaving;
     }
 
-    private void MoveTowards(Vector3 targetPosition, System.Action onArrival)
+    public void SetupCustomer(Transform queuePoint, Transform exitTransform)
     {
-        transform.position = Vector3.MoveTowards(transform.position, targetPosition, moveSpeed * Time.deltaTime);
-
-        if (spriteRenderer != null)
-        {
-            if (targetPosition.x < transform.position.x) spriteRenderer.flipX = true;
-            else if (targetPosition.x > transform.position.x) spriteRenderer.flipX = false;
-        }
-
-        if (Vector3.Distance(transform.position, targetPosition) < 0.05f)
-        {
-            onArrival?.Invoke();
-        }
+        currentQueuePoint = queuePoint;
+        exitPointPosition = exitTransform != null ? exitTransform.position : transform.position;
+        currentState = CustomerState.Entering;
     }
 
-    public CustomerState GetCurrentState() => currentState;
-    public TableManager.ChairSlot GetAssignedSeat() => assignedChairSlot;
+    public void SetupCustomer(Transform queuePoint, Vector3 exitVector)
+    {
+        currentQueuePoint = queuePoint;
+        exitPointPosition = exitVector;
+        currentState = CustomerState.Entering;
+    }
+
+    private void MoveTowards(Vector3 destination)
+    {
+        transform.position = Vector3.MoveTowards(transform.position, destination, moveSpeed * Time.deltaTime);
+    }
 }

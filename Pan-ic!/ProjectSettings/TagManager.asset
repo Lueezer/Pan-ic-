@@ -12,6 +12,9 @@ TagManager:
   - Customer
   - Stove
   - HoldPoint
+  - ItemPoint
+  - Item
+  - leftInteractPoint
   layers:
   - Default
   - TransparentFX
